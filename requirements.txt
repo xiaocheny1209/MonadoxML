@@ -1,4 +1,6 @@
+mne
 numpy
+scipy
 torch
 pandas
 tqdm

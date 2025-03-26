@@ -7,3 +7,6 @@ tqdm
 torch
 scikit-learn
 matplotlib
+hdf5storage
+h5py
+joblib

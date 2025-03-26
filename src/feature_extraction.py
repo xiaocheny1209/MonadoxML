@@ -4,34 +4,61 @@ from scipy.stats import skew, kurtosis
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from scipy.signal.windows import hann
 
 
 class FeatureExtraction:
-    def __init__(self, preprocessed_data):
+    def __init__(self, preprocessed_data, freq_bands):
         self.preprocessed_data = preprocessed_data
-        self.default_freq_bands = [
-            (0.5, 4),
-            (4, 8),
-            (8, 12),
-            (12, 30),
-            (30, 45),
-        ]  # default bands (delta, theta, alpha, beta, gamma)
+        if freq_bands:
+            self.default_freq_bands = freq_bands
+        else:
+            self.default_freq_bands = [
+                (0.5, 4),
+                (4, 8),
+                (8, 12),
+                (12, 30),
+                (30, 45),
+            ]  # default bands (delta, theta, alpha, beta, gamma)
 
-    def extract_psd_feature(self, window_size=1, freq_bands=None):
-        """Extract Power Spectral Density (PSD) features for specific frequency bands."""
-        freq_bands = self.default_freq_bands if not freq_bands else freq_bands
-        psd_features = []
-        for start, stop in freq_bands:
-            # Compute the Power Spectral Density (PSD) using Welch's method
-            f, Pxx = welch(
-                self.preprocessed_data,
-                fs=self.preprocessed_data.info["sfreq"],
-                nperseg=window_size,
+    def _get_relative_psd(self, relative_energy_graph, sample_freq, stft_n=256):
+        start_index = int(np.floor(self.default_freq_bands[0] / sample_freq * stft_n))
+        end_index = int(np.floor(self.default_freq_bands[1] / sample_freq * stft_n))
+        # print(start_index, end_index)
+        psd = np.mean(
+            relative_energy_graph[:, start_index - 1 : end_index] ** 2, axis=1
+        )
+        # print('psd:', psd.shape)
+        return psd
+
+    def extract_psd_feature(self, window_size, freq, stft_n=256):
+        sample_freq = freq
+        # Ptr operation
+        if len(self.preprocessed_data.shape) > 2:
+            self.preprocessed_data = np.squeeze(self.preprocessed_data)
+        n_channels, n_samples = self.preprocessed_data.shape
+        point_per_window = int(sample_freq * window_size)
+        window_num = int(n_samples // point_per_window)
+        psd_feature = np.zeros((window_num, len(self.default_freq_bands), n_channels))
+        # print('psd feature shape:', psd_feature.shape)
+        for window_index in range(window_num):
+            start_index, end_index = (
+                point_per_window * window_index,
+                point_per_window * (window_index + 1),
             )
-            # Extract PSD values for the given frequency band
-            band_psd = np.mean(Pxx[(f >= start) & (f <= stop)])
-            psd_features.append(band_psd)
-        return np.array(psd_features)
+            window_data = self.preprocessed_data[:, start_index:end_index]
+            hdata = window_data * hann(point_per_window)
+            fft_data = np.fft.fft(hdata, n=stft_n)
+            # print('fft_data shape:',fft_data.shape)
+            energy_graph = np.abs(fft_data[:, 0 : int(stft_n / 2)])
+            # print('energy_graph.shape:', energy_graph.shape)
+            relative_energy_graph = energy_graph / np.sum(energy_graph)
+            for band_index, band in enumerate(self.default_freq_bands):
+                band_relative_psd = self._get_relative_psd(
+                    relative_energy_graph, sample_freq, stft_n
+                )
+                psd_feature[window_index, band_index, :] = band_relative_psd
+        return psd_feature
 
     def extract_time_domain_features(self):
         """
@@ -72,6 +99,7 @@ class FeatureExtraction:
     @staticmethod
     def normalize_features(features):
         scaler = StandardScaler()
+        # reshaped_features = np.array(features).reshape(1, -1) # reshape if the feature is 1D
         return scaler.fit_transform(features)
 
     @staticmethod

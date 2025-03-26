@@ -39,26 +39,42 @@ python src/main.py
 ```
 
 ## Model Performance
-| Model | Accuracy | Inference time (ms) |
-|--------|---------|-----------|
-| SVM | 94.05% | .. |
 
-### Cross-Validation on FACED Dataset
+### SVM with Difference Entropy (Cross-Validation over FACED Dataset)
 
-| Fold | Validation Accuracy (%) |
-|------|-------------------------|
-| 1    | 88.10                   |
-| 2    | 92.86                   |
-| 3    | 90.48                   |
-| 4    | 89.29                   |
-| 5    | **94.05** (Best Fold)   |
-| 6    | 89.29                   |
-| 7    | 88.10                   |
-| 8    | 89.29                   |
-| 9    | 85.71                   |
-| 10   | 83.33                   |
+| Fold | Validation Accuracy |
+|------|---------------------|
+| 1    | 0.8810              |
+| 2    | 0.9286              |
+| 3    | 0.9048              |
+| 4    | 0.8929              |
+| 5    | 0.9405              |
+| 6    | 0.8929              |
+| 7    | 0.8810              |
+| 8    | 0.8929              |
+| 9    | 0.8571              |
+| 10   | 0.8333              |
 
-**Best Fold**: Fold 5 with a validation accuracy of **94.05%**.
+**Best fold**: 5 with Validation Accuracy: **0.9405**
+
+---
+
+### SVM with Power Spectral Density (Cross-Validation over FACED Dataset)
+
+| Fold | Validation Accuracy |
+|------|---------------------|
+| 1    | 0.7024              |
+| 2    | 0.6667              |
+| 3    | 0.6548              |
+| 4    | 0.6905              |
+| 5    | 0.6905              |
+| 6    | 0.6548              |
+| 7    | 0.6905              |
+| 8    | 0.7024              |
+| 9    | 0.6429              |
+| 10   | 0.7024              |
+
+**Best fold**: 1 with Validation Accuracy: **0.7024**
 
 ## License
 This project is licensed under the **GNU General Public License v3.0** – see the [LICENSE](LICENSE) file for details.
